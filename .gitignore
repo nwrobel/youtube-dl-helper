@@ -1,1 +1,4 @@
-py-venv/*
+py-venv
+src
+dependencies
+.vscode

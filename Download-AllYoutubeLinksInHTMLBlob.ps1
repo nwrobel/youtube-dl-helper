@@ -1,29 +1,53 @@
+<#
+.SYNOPSIS
+Downloads a list of Youtube videos.
+
+.DESCRIPTION
+This cmdlet parses the HTML code of a Youtube playlist page to find the video links and downloads
+each video using "youtube-dl".
+
+.PARAMETER HTMLFilepath
+The absolute filepath of the input file containing the desired playlist page's HTML code
+
+.PARAMETER VideoOutputDir
+Path of where the videos should be saved to
+
+.PARAMETER ffmpegDirectory
+Path of the "bin" folder of the Windows program ffmpeg on the system
+
+.PARAMETER youtubeDlFilePath
+Path of the "youtube-dl.exe", the youtube-dl program 
+
+.NOTES
+This cmdlet uses ffmpeg and youtube-dl as dependencies and requires that you pass their paths on the
+system as parameters. Python version 3.6 or later must also be installed on the system and added
+to the PATH.
+
+#>
 function Download-AllYoutubeLinksInHTMLBlob {
-    param(
+    param (
         [string]$HTMLFilepath,
-        [string]$VideoOutputDir
+        [string]$VideoOutputDir,
+        [string]$ffmpegDirectory,
+        [string]$youtubeDlFilePath
     )
 
-    $ffmpegDir = Join-Path $PSScriptRoot -ChildPath 'dependencies\ffmpeg\bin'
-    $youtubeDlFilepath = Join-Path $PSScriptRoot -ChildPath 'dependencies\youtube-dl.exe'
-    $pythonLinkParserScriptFilepath = Join-Path $PSScriptRoot -ChildPath 'YoutubeLinkParser2.py'
-
+    $pythonLinkParserScriptFilepath = Join-Path $PSScriptRoot -ChildPath 'youtube-link-parser.py'
     $linksOutputFilepath = Join-Path $env:TEMP -ChildPath 'links-out.txt'
 
     & python.exe $pythonLinkParserScriptFilepath $HTMLFilepath $linksOutputFilepath
  
-    Start-Process $youtubeDlFilepath -ArgumentList @('--rm-cache-dir') -Wait -NoNewWindow
+    Start-Process $youtubeDlFilePath -ArgumentList @('--rm-cache-dir') -Wait -NoNewWindow
 
     $youtubeDlArgs = @(
         '-f',
-#        'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio',
         'bestvideo+bestaudio/best',
         '--merge-output-format',
         'mp4',
         '--output',
         "`"$VideoOutputDir/%(uploader)s - %(title)s - YouTube [%(id)s]`"", 
         '--ffmpeg-location',
-        "`"$ffmpegDir`""
+        "`"$ffmpegDirectory`""
     )
 
     $links = Get-Content $linksOutputFilepath
@@ -38,7 +62,7 @@ function Download-AllYoutubeLinksInHTMLBlob {
         $videoDownloadSuccessful = $false
 
         do {
-            Start-Process -FilePath $youtubeDlFilepath -ArgumentList $thisVideoDownloadArgs -Wait -NoNewWindow
+            Start-Process -FilePath $youtubeDlFilePath -ArgumentList $thisVideoDownloadArgs -Wait -NoNewWindow
             
             $downloadedVideo = Get-ChildItem $VideoOutputDir | Where-Object { $_.Name -like "*$($videoId)].mp4" }
             if ($downloadedVideo) {
@@ -59,7 +83,13 @@ function Download-AllYoutubeLinksInHTMLBlob {
 }
 
 
-$htmlFilepath = "D:\VM-Shared\silicon\src.txt"
-$videoOutputDir = "D:\Downloads\yt"
-Download-AllYoutubeLinksInHTMLBlob -HTMLFilepath $htmlFilepath -VideoOutputDir $videoOutputDir
+# Usage of the cmdlet above
+# Use your own values here
+$params = @{
+    HtmlFilepath = "D:\VM-Shared\silicon\src.txt";
+    VideoOutputDir = "D:\Downloads\yt";
+    ffmpegDirectory = Join-Path $PSScriptRoot -ChildPath "dependencies\ffmpeg\bin"
+    youtubeDlFilePath = Join-Path $PSScriptRoot -ChildPath "dependencies\youtube-dl.exe"
+}
+Download-AllYoutubeLinksInHTMLBlob @params
 
