@@ -82,14 +82,3 @@ function Download-AllYoutubeLinksInHTMLBlob {
     $failedLinks
 }
 
-
-# Usage of the cmdlet above
-# Use your own values here
-$params = @{
-    HtmlFilepath = "D:\VM-Shared\silicon\src.txt";
-    VideoOutputDir = "D:\Downloads\yt";
-    ffmpegDirectory = Join-Path $PSScriptRoot -ChildPath "dependencies\ffmpeg\bin"
-    youtubeDlFilePath = Join-Path $PSScriptRoot -ChildPath "dependencies\youtube-dl.exe"
-}
-Download-AllYoutubeLinksInHTMLBlob @params
-
